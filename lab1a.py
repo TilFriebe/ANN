@@ -13,7 +13,6 @@ def main():
 
     '''
     Weights standard deviation, integers?
-    
     '''
     #standard deviation Weights
     sigmaW = 4
