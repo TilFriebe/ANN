@@ -95,7 +95,7 @@ $B$ is created in the same way as 3.1.1 .
 Initial weight matrix
 
     ```
-    Input: weights for both classes, bias
+    Input: classes matrices, n, bias
         (Dim: Sample=1xk, X=(n+1)xk, T=1xk, W=1x(n+1))
         weights + array k bias 
         matrix(weights)
