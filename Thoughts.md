@@ -96,7 +96,7 @@ Initial weight matrix
 
     ```
     Input: classes matrices, n, bias
-        (Dim: Sample=1xk, X=(n+1)xk, T=1xk, W=1x(n+1))
+        (Dim: Sample=1xk, X=(k+1)xn, T=1xn, W=1x(k+1))
         weights + array k bias 
         matrix(weights)
         transpose(matrix)
