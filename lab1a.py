@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 def main():
-    n, bias, eta, epochs = 100, 0, [0.03], 100
+    n, bias, eta, epochs = 100, 0, [0.01], 5
 
     #mean and standard deviation set A
     mA = [-3, -3]
@@ -52,50 +52,46 @@ def main():
         data = perceptron(A, B, n, weights, bias, learning_methods, epochs, i, False)
         allErrors.append(data[1])
         allWeights.append(data[0])
+    print("all errors ", allErrors, "\n")
+    weights1 = allWeights[0][0]
 
-    weights = allWeights[0][0]
-    weights1 = allWeights[0][1]
-    weights2 = allWeights[0][2]
+    print("print SHAPE OF ERRORS", np.shape(allErrors), "\n")
+    print("print allErrors before plot: ", allErrors)
 
 
 
-    """
-    #calculating errors
-    xList = [i for i in range(1, 2*n+1)]
-    for i in range(2*n):
-        #allErrors[0][i] -= 7
-        #allErrors[1][i] -= 14
-        #allErrors[2][i] -= 21
-        pass
 
-    plt.plot(xList[0:100], allErrors[0][0:100], xList[0:100], allErrors[1][0:100], xList[0:100], allErrors[2][0:100], xList[0:100], allErrors[3][0:100])
-    plt.legend(("eta = 0.001", "eta = 0.01", "eta = 0.1", "eta = 1"))
 
-    """
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Horizontally stacked subplots')
+
+    #Plot 1
+    error1 = allErrors[0][0]
+
+    plt.subplot(1, 2, 2)
+    plt.plot(error1, 'black')
+
+    plt.ylabel('errors')
+    plt.xlabel('epochs')
+
+    #Plot 2
+    plt.subplot(1, 2, 1)
+
+    plt.plot(classA1, classA2, 'x', color="green")
+    plt.plot(classB1, classB2, 'x', color="red")
+
+    # to plot the initial hyperplane (red)
     plt.arrow((bias / np.dot(weights, weights)) * weights[0], (bias / np.dot(weights, weights)) * weights[1],
-              weights[0], weights[1], head_width=0.2, color="green")
+              weights[0], weights[1], head_width=0.2, color="red", linewidth=2.0)
     x = np.linspace(-4, 4)
-    plt.plot(x, (bias - weights[0] * x) / weights[1], '-g')
+    plt.plot(x, (bias - weights[0] * x) / weights[1], '-r', linewidth=1.5)
 
+    #Hyperplane after epochs
     plt.arrow((bias / np.dot(weights1, weights1)) * weights1[0], (bias / np.dot(weights1, weights1)) * weights1[1],
-              weights1[0], weights1[1], head_width=0.2, color="blue")
+              weights1[0], weights1[1], head_width=0.2, color="green")
     x = np.linspace(-4, 4)
-    plt.plot(x, (bias - weights1[0] * x) / weights1[1], '-b')
+    plt.plot(x, (bias - weights1[0] * x) / weights1[1], '--b')
 
-    plt.arrow((bias / np.dot(weights2, weights2)) * weights2[0], (bias / np.dot(weights2, weights2)) * weights2[1],
-              weights2[0], weights2[1], head_width=0.2, color="black")
-    x = np.linspace(-4, 4)
-    plt.plot(x, (bias - weights2[0] * x) / weights2[1], 'black')
-    #To here
-
-    plt.ylabel('x2')
-    plt.xlabel('x1')
-    plt.axis('square')
-    plt.ylim(-4, 4)
-    plt.xlim(-4, 4)
-
-
-    plt.title('Classification of two datasets using classical perceptron learning')
 
     plt.show()
 
@@ -118,7 +114,6 @@ def perceptron(classPos, classNeg, n, weights, bias, learning_methods, epochs, e
     classes = np.vstack((np.hstack((classNeg, classPos)), np.array((2*n)*[1])))
     allWeights = [weights.copy() for i in range(len(learning_methods))]
     allErrors = [[] for i in range(len(learning_methods))]
-    print(allWeights)
 
 
     for i in range(epochs):
@@ -180,14 +175,6 @@ def delta_rule(n, i, classes, weights, bias):
     :param bias: A shifting parameter to move it away from origin
     :return: The target vakue t, the coordinates for the data point x and the estimated target value y
     """
-    t=((i-1)//n)*2-1
-    if i > n:
-        classPick = 0
-    else:
-        classPick = 1
-    x = [classes[classPick][0][(i - 1) % n], classes[classPick][1][(i - 1) % n]]
-    y = np.dot(weights, x)
-    return [t, x, y]
 
 
 def threshold(y):
