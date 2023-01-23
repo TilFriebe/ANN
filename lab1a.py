@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    n, bias, eta, epochs = 100, 1, [0.01], 5
+    n, bias, eta, epochs = 100, 1, [0.001, 0.01, 0.1], 5
 
     # mean and standard deviation set A
-    mA = [-5, 0]
+    mA = [-5, 5]
     sigmaA = 1
 
     # mean and standard deviation set B
@@ -18,7 +18,7 @@ def main():
 
     '''
     # standard deviation Weights
-    sigmaW = 0.1
+    sigmaW = 0.01
     dimension = 2
     weights = InitialWeightMatrix(dimension, sigmaW, bias)
     print("Initial weight matrix ", weights, "line k ", weights[0] / weights[1], "\n")
@@ -36,56 +36,65 @@ def main():
     # all errors and weights for different eta
     allErrors = []
     allWeights = []
+    allMSE = []
 
 
 
     # looping over all eta
     learning_methods = [perceptron_learning, delta_learning_online, delta_learning_batch]
     for i in eta:
-        data = perceptron(A, B, n, weights, bias, learning_methods, epochs, i, False)
+        data = perceptron(A, B, n, weights, learning_methods, epochs, i)
         allErrors.append(data[1])
         allWeights.append(data[0])
+        allMSE.append(data[2])
     print("all errors ", allErrors, "\n")
-    weights1 = allWeights[0][0]
+    print(allWeights)
 
     print("print SHAPE OF ERRORS", np.shape(allErrors), "\n")
     print("print allErrors before plot: ", allErrors)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.suptitle('Horizontally stacked subplots')
 
-    # Plot 1
-    error1 = allErrors[0][0]
+    # Plot 2
 
-    plt.subplot(1, 2, 2)
-    plt.plot(error1, 'black')
+    plt.subplot(1, 3, 2)
+    plt.plot(allErrors[0][0], 'green', allErrors[0][1], 'red', allErrors[0][2], 'blue')
 
     plt.ylabel('errors')
     plt.xlabel('epochs')
 
-    # Plot 2
-    plt.subplot(1, 2, 1)
+    # Plot 3
+
+    plt.subplot(1, 3, 3)
+    plt.plot(allMSE[0][0], 'green', allMSE[0][1], 'red', allMSE[0][2], 'blue')
+
+    plt.ylabel('errors')
+    plt.xlabel('epochs')
+
+    # Plot 1
+    plt.subplot(1, 3, 1)
 
     plt.plot(classA1, classA2, 'x', color="green")
     plt.plot(classB1, classB2, 'x', color="red")
-    plt.ylim([-5, 5])
+    plt.ylim([-10, 10])
 
     # to plot the initial hyperplane (red)
-    plt.arrow((bias / np.dot(weights, weights)) * weights[0], (bias / np.dot(weights, weights)) * weights[1],
+    plt.arrow((weights[2] / np.dot(weights, weights)) * weights[0], (weights[2] / np.dot(weights, weights)) * weights[1],
               weights[0], weights[1], head_width=0.2, color="red", linewidth=2.0)
     x = np.linspace(-4, 4)
-    plt.plot(x, -(bias + weights[0] * x) / weights[1], '-r', linewidth=1.5)
+    plt.plot(x, -(weights[2] + weights[0] * x) / weights[1], '-r', linewidth=1.5)
+    plot_mapping = ["green", "red", "blue", "--g", "--y", "--b"]
 
-    # Hyperplane after epochs
-    plt.arrow((weights1[2] * bias / np.dot(weights1, weights1)) * weights1[0], (weights1[2]*bias / np.dot(weights1, weights1)) * weights1[1],
-              weights1[0], weights1[1], head_width=0.2, color="green")
-    x = np.linspace(-4, 4)
-    plt.plot(x, -(weights1[2] + weights1[0] * x) / weights1[1], '--b')
+    for i in range(len(learning_methods)):
+        # Hyperplane after epochs
+        x = np.linspace(-4, 4)
+        plt.plot(x, -(allWeights[0][i][2] + allWeights[0][i][0] * x) / allWeights[0][i][1], plot_mapping[3 + i])
 
     plt.show()
 
 
-def perceptron(classPos, classNeg, n, weights, bias, learning_methods, epochs, eta=1, batch=True):
+def perceptron(classPos, classNeg, n, weights, learning_methods, epochs, eta=1):
     """
 
     :param classPos1: x values for class 1
@@ -104,18 +113,18 @@ def perceptron(classPos, classNeg, n, weights, bias, learning_methods, epochs, e
     classes = np.vstack((np.hstack((classNeg, classPos)), np.array((2 * n) * [1])))
     allWeights = [weights.copy() for i in range(len(learning_methods))]
     allErrors = [[] for i in range(len(learning_methods))]
-
+    allMSE = [[] for i in range(len(learning_methods))]
     # add initial vaules to allErrors
     for i in range(len(learning_methods)):
         allErrors[i].append(nErrors(allWeights[i], n, classes))
-
+        allMSE[i].append(MSE(allWeights[i], n, classes))
     for i in range(epochs):
-        # deciding order of samples. Neg: 1 to n, Pos: n+1 to 2n
+        #Neg: 1 to n, Pos: n+1 to 2n
         orderSamples = np.random.permutation(2 * n)
         for j in range(len(learning_methods)):
-            variables = learning_methods[j](n, classes, allWeights[j], eta, orderSamples)
-            allWeights[j] = variables[0]
-            allErrors[j].append(nErrors(variables[0], n, classes))
+            learning_methods[j](n, classes, allWeights[j], eta, orderSamples)
+            allErrors[j].append(nErrors(allWeights[j], n, classes))
+            allMSE[j].append(MSE(allWeights[j], n, classes))
 
     return [allWeights, allErrors]
 
@@ -125,10 +134,6 @@ def perceptron_learning(n, X, W, eta, permutation):
     for i in permutation:
         T.append(i // n)
         W += eta * np.dot(T[-1] - threshold(np.dot(W, X[:, i])), X[:, i])
-        # print("T for ",i+1, " ", T[-1])
-        # print(threshold(np.dot(W, X[:, (i - 1)])))
-        # print(T[-1] - threshold(np.dot(W, X[:, i])))
-    return [W, np.array(T)]
 
 
 def delta_learning_online(n, X, W, eta, permutation):
@@ -136,14 +141,15 @@ def delta_learning_online(n, X, W, eta, permutation):
     for i in permutation:
         T.append((i // n) * 2 - 1)
         W += eta * np.dot(T[-1] - np.dot(W, X[:, i]), X[:, i])
-        print(T[-1] - np.dot(W, X[:, i]))
-    return [W, np.array(T)]
 
 
 def delta_learning_batch(n, X, W, eta, permutation):
-    T = np.array(n * [-1] + n * [1])
-    W += eta * np.dot(T - np.dot(W, X), np.transpose(X))
-    return W, T
+    T = []
+    weights_temp = [0, 0, 0]
+    for i in permutation:
+        T.append((i // n) * 2 - 1)
+        weights_temp += eta * np.dot(T[-1] - np.dot(W, X[:, i]), X[:, i])
+    W += weights_temp
 
 
 def nErrors(W, n, X):
