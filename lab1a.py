@@ -1,17 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 def main():
-    n, bias, sigmaW, epochs = 100, 1, 0.1, 5
+    n, bias, sigmaW, epochs = 100, 0, 0.1, 5
 
 
     weights = np.random.standard_normal(3) * sigmaW
 
     #mean and standard deviation set A
-    mA = [-2, 0]
+    mA = [1, 0]
     sigmaA = 0.3
 
     #mean and standard deviation set B
-    mB = [-6, 0]
+    mB = [-3, 2]
     sigmaB = 0.3
 
     #create the sets, each containing n elements
@@ -29,7 +29,7 @@ def main():
     allErrors = []
     allWeights = []
 
-    learning_methods = [perceptron_learning]
+    learning_methods = [perceptron_learning, delta_learning_online, delta_learning_batch]
 
     #looping over all eta
     for i in eta:
@@ -47,7 +47,7 @@ def main():
     xList = [i for i in range(1, epochs + 1)]
 
     plt.subplot(1, 2, 2)
-    plt.plot(xList, allErrors[0][0])
+    plt.plot(xList, allErrors[0][0], xList, allErrors[0][1], xList, allErrors[0][2])
     plt.legend(("Perceptron learning", "Delta rule online", "Delta rule batch"))
 
     plt.ylabel('errors')
@@ -69,11 +69,14 @@ def main():
 
     # Hyperplane after epochs
     for i in range(len(learning_methods)):
-        plt.arrow((allWeights[0][i][2]*bias / np.dot(allWeights[0][i], allWeights[0][i])) * allWeights[0][i][0],
-                  (allWeights[0][i][2]*bias / np.dot(allWeights[0][i], allWeights[0][i])) * allWeights[0][i][1],
+        plt.arrow((bias / np.dot(allWeights[0][i], allWeights[0][i])) * allWeights[0][i][0],
+                  (bias / np.dot(allWeights[0][i], allWeights[0][i])) * allWeights[0][i][1],
                   allWeights[0][i][0], allWeights[0][i][1], head_width=0.2, color=plot_map[i])
         x = np.linspace(-4, 4)
-        plt.plot(x, (allWeights[0][i][2]*bias - allWeights[0][i][0] * x) / allWeights[0][i][1], plot_map[3 + i])
+        plt.plot(x, (bias - allWeights[0][i][0] * x) / allWeights[0][i][1], plot_map[3 + i])
+
+
+
 
     plt.show()
 
@@ -97,10 +100,11 @@ def perceptron_learning(n, classes, weights, eta, permutation, error):
         t = i // n
         x = classes[:, i]
 
-        y = threshold(np.dot(weights[:2], x[:2]), weights[2])
+        y = threshold(np.dot(weights, x), weights[1])
         weights += eta * np.dot((t - y), x)
         totError += check_errors(weights, n, classes, i)
     error.append(totError)
+    return [weights, error]
 
 def delta_learning_online(n, classes, weights, eta, permutation, error):
     totError = 0
@@ -111,6 +115,7 @@ def delta_learning_online(n, classes, weights, eta, permutation, error):
         weights += eta * np.dot((t - y), x)
         totError += check_errors(weights, n, classes, i)
     error.append(totError)
+    return [weights, error]
 
 def delta_learning_batch(n, X, W, eta, permutation, error):
     totError = 0
@@ -120,6 +125,7 @@ def delta_learning_batch(n, X, W, eta, permutation, error):
     T = np.array(n * [-1] + n * [1])
     W += eta * np.dot(T - np.dot(W, X), np.transpose(X))
     error.append(totError)
+    return [W, error]
 
 
 
