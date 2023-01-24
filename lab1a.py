@@ -3,15 +3,15 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    n, bias, eta, epochs = 100, 1, [0.001, 0.01, 0.1], 5
+    n, bias, eta, epochs = 100, 1, [0.0001, 0.001, 0.01, 0.1], 5
 
     # mean and standard deviation set A
-    mA = [-5, 5]
-    sigmaA = 1
+    mA = [3, -2]
+    sigmaA = 0.9
 
     # mean and standard deviation set B
-    mB = [5, 0]
-    sigmaB = 1
+    mB = [-1, 2]
+    sigmaB = 0.9
 
     '''
     Weights standard deviation, integers?
@@ -42,38 +42,43 @@ def main():
 
     # looping over all eta
     learning_methods = [perceptron_learning, delta_learning_online, delta_learning_batch]
+    #classTest = Learning(n, A, B, T, eta)
+    #newWeights = [[], [], []]
     for i in eta:
         data = perceptron(A, B, n, weights, learning_methods, epochs, i)
         allErrors.append(data[1])
         allWeights.append(data[0])
-        allMSE.append(data[2])
+        #allMSE.append(data[2])
     print("all errors ", allErrors, "\n")
     print(allWeights)
 
     print("print SHAPE OF ERRORS", np.shape(allErrors), "\n")
     print("print allErrors before plot: ", allErrors)
+    fig, (ax1, ax2) = plt.subplots(1, 2)
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    #fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.suptitle('Horizontally stacked subplots')
 
     # Plot 2
 
-    plt.subplot(1, 3, 2)
-    plt.plot(allErrors[0][0], 'green', allErrors[0][1], 'red', allErrors[0][2], 'blue')
+    plt.subplot(1, 2, 2)
+    plt.plot(allErrors[0][0], 'green', allErrors[0][1], 'red', allErrors[0][2], 'blue',)
 
     plt.ylabel('errors')
     plt.xlabel('epochs')
-
+    """
     # Plot 3
 
     plt.subplot(1, 3, 3)
-    plt.plot(allMSE[0][0], 'green', allMSE[0][1], 'red', allMSE[0][2], 'blue')
+    plt.plot(allMSE[0][0], 'green', allMSE[0][1], 'red')
+
 
     plt.ylabel('errors')
     plt.xlabel('epochs')
-
+    """
     # Plot 1
-    plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
+    plt.grid(True)
 
     plt.plot(classA1, classA2, 'x', color="green")
     plt.plot(classB1, classB2, 'x', color="red")
@@ -126,7 +131,7 @@ def perceptron(classPos, classNeg, n, weights, learning_methods, epochs, eta=1):
             allErrors[j].append(nErrors(allWeights[j], n, classes))
             allMSE[j].append(MSE(allWeights[j], n, classes))
 
-    return [allWeights, allErrors]
+    return [allWeights, allErrors, allMSE]
 
 
 def perceptron_learning(n, X, W, eta, permutation):
@@ -139,8 +144,8 @@ def perceptron_learning(n, X, W, eta, permutation):
 def delta_learning_online(n, X, W, eta, permutation):
     T = []
     for i in permutation:
-        T.append((i // n) * 2 - 1)
-        W += eta * np.dot(T[-1] - np.dot(W, X[:, i]), X[:, i])
+        T.append(((i // n) * 2) - 1)
+        W += eta * (T[-1] - np.dot(np.transpose(W), X[:, i])) * np.transpose(X[:, i])
 
 
 def delta_learning_batch(n, X, W, eta, permutation):
@@ -148,7 +153,7 @@ def delta_learning_batch(n, X, W, eta, permutation):
     weights_temp = [0, 0, 0]
     for i in permutation:
         T.append((i // n) * 2 - 1)
-        weights_temp += eta * np.dot(T[-1] - np.dot(W, X[:, i]), X[:, i])
+        weights_temp += eta * (T[-1] - np.dot(np.transpose(W), X[:, i])) * np.transpose(X[:, i])
     W += weights_temp
 
 
@@ -161,6 +166,15 @@ def nErrors(W, n, X):
             error += 1
     return error
 
+def MSE(W, n, X):
+    MSEerror=0
+    norm = np.sqrt(np.dot(W, W))
+    for i in range(2 * n):
+        projOnW = (np.dot(X[:, (i)], W) / norm ** 2) * W
+        projOnHyp = W - projOnW
+        MSEerror += np.sum(np.sqrt((X[:, (i)]-projOnHyp)**2)) / n
+    return MSEerror
+
     """
 
     :param n: number of data points in each class
@@ -171,15 +185,44 @@ def nErrors(W, n, X):
     :return: The target vakue t, the coordinates for the data point x and the estimated target value y
     """
 
+def remove_samples_randomly(A, B, perc_A, perc_B):
+    """
+    :param A: dataset class A
+    :param B: dataset class B
+    :param perc_A: percentage of A to be removed
+    :param perc_B: percentage of B to be removed
+    :return: reduced datasets A_red and B_red
     """
 
-    :param n: number of data points in each class
-    :param i: index of a certain Data point
-    :param classes: A list of classes including their coordinates
-    :param weights: weights of the linear line
-    :param bias: A shifting parameter to move it away from origin
-    :return: The target vakue t, the coordinates for the data point x and the estimated target value y
-    """
+    ### for (a): 25,
+    idx_A = np.random.uniform(0, 100, 100-perc_A).astype('int')
+    idx_B = np.random.uniform(0, 100, 100-perc_B).astype('int')
+
+    A_red = A[:, idx_A]
+    B_red = B[:, idx_B]
+
+    return A_red, B_red
+    
+
+def remove_samples_classa(A, n, perc_A_1, perc_A_2):
+
+    A_1 = A[:, A[1, :] < 0]
+    A_2 = A[:, A[1, :] > 0]
+
+
+    len_A_1 = np.shape(A_1)[1]
+    len_A_2 = np.shape(A_2)[1]
+    n_A_1 = np.round(((n-perc_A_1)/n) * len_A_1)
+    n_A_2 = np.round(((n-perc_A_2)/n) * len_A_2)
+    idx_A_1 = np.random.uniform(0, len_A_1, int(n_A_1)).astype('int')
+    idx_A_2 = np.random.uniform(0, len_A_2, int(n_A_2)).astype('int')
+
+    A_red1 = A_1[:, idx_A_1]
+    A_red2 = A_2[:, idx_A_2]
+    
+    return A_red1, A_red2
+
+
 
 
 def threshold(y):
@@ -192,6 +235,17 @@ def threshold(y):
     if y > 0:
         return 1
     return 0
+
+def threshold_delta(y):
+    """
+
+    :param y: A number representing whether a data point is in the correct classification
+    :param bias: A shifting parameter to move it away from origin
+    :return: The estimated target value
+    """
+    if y > 0:
+        return 1
+    return -1
 
 
 def InitialWeightMatrix(dimension, sigmaW, bias):
