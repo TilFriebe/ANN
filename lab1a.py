@@ -99,10 +99,10 @@ def main():
     # to plot the initial hyperplane (red)
     plt.arrow((weights[2] / np.dot(weights, weights)) * weights[0],
               (weights[2] / np.dot(weights, weights)) * weights[1],
-              weights[0], weights[1], head_width=0.2, color="red", linewidth=2.0)
+              weights[0], weights[1], head_width=0.2, color="yellow", linewidth=2.0)
     x = np.linspace(-4, 4)
-    plt.plot(x, -(weights[2] + weights[0] * x) / weights[1], '-r', linewidth=1.5)
-    plot_mapping = ["green", "red", "blue", "--g", "--y", "--b"]
+    plt.plot(x, -(weights[2] + weights[0] * x) / weights[1], 'yellow', linewidth=1.5)
+    plot_mapping = ["green", "red", "blue", "--g", "--r", "--b"]
 
     for i in range(len(learning_methods)):
         # Hyperplane after epochs
