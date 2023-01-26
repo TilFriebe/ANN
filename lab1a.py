@@ -41,7 +41,8 @@ def main():
 
     A, B = np.vstack((classA1, classA2)), np.vstack((classB1, classB2))
 
-    A, B = remove_samples_randomly(A, B, 0, 0)
+    A = remove_samples_classa(A, n, 20, 80)
+    # A, B = remove_samples_randomly(A, B, 0, 0)
 
     # all errors and weights for different eta
     allErrors = []
@@ -88,8 +89,10 @@ def main():
     plt.subplot(1, 2, 1)
     plt.grid(True)
 
-    plt.plot(classA1, classA2, 'x', color="green")
-    plt.plot(classB1, classB2, 'x', color="red")
+    plt.plot(A[0, :], A[1, :], 'x', color="green")
+    # plt.plot(classA1, classA2, 'x', color="green")
+    plt.plot(B[0, :], B[1, :], 'x', color="red")
+    # plt.plot(classB1, classB2, 'x', color="red")
     plt.ylim([-1.5, 1.5])
     plt.xlim([-2, 2])
 
@@ -238,8 +241,8 @@ def remove_samples_classa(A, n, perc_A_1, perc_A_2):
     A_1 = A[:, A[0, :] < 0]
     A_2 = A[:, A[0, :] > 0]
 
-    len_A_1 = np.shape(A_1)[0]
-    len_A_2 = np.shape(A_2)[0]
+    len_A_1 = np.shape(A_1)[1]
+    len_A_2 = np.shape(A_2)[1]
     n_A_1 = np.round(((n - perc_A_1) / n) * len_A_1)
     n_A_2 = np.round(((n - perc_A_2) / n) * len_A_2)
     idx_A_1 = np.random.uniform(0, len_A_1, int(n_A_1)).astype('int')
@@ -248,7 +251,9 @@ def remove_samples_classa(A, n, perc_A_1, perc_A_2):
     A_red1 = A_1[:, idx_A_1]
     A_red2 = A_2[:, idx_A_2]
 
-    return A_red1, A_red2
+    A_red = np.concatenate((A_red1, A_red2), axis=1)
+
+    return A_red
 
 
 def threshold(y):
