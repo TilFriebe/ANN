@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    n, bias, eta, epochs = 100, 1, [0.0001, 0.001, 0.01, 0.1], 5
+    n, bias, eta, epochs = 100, 1, [0.00001, 0.0001, 0.001, 0.01, 0.1], 30
 
     # mean and standard deviation set A
-    mA = [3, -2]
+    mA = [0, 0]
     sigmaA = 0.9
 
     # mean and standard deviation set B
-    mB = [-1, 2]
+    mB = [-5, -3]
     sigmaB = 0.9
 
     '''
@@ -20,19 +20,25 @@ def main():
     # standard deviation Weights
     sigmaW = 0.01
     dimension = 2
-    weights = InitialWeightMatrix(dimension, sigmaW, bias)
+    weights = InitialWeightMatrix(sigmaW)
     print("Initial weight matrix ", weights, "line k ", weights[0] / weights[1], "\n")
 
     # create the sets, each containing n elements
-    classA1 = np.random.standard_normal(n) * sigmaA + mA[0]
+    #classA1 = np.random.standard_normal(n) * sigmaA + mA[0]
     # For 3.1.3
-    # classA1 = np.append(np.random.standard_normal(n/2) * sigmaA + mA[0], np.random.standard_normal(n/2) * sigmaA - mA[0])
+    classA1 = np.append(np.random.standard_normal(int(n/2)) * sigmaA + mA[0], np.random.standard_normal(int(n/2)) * sigmaA - mA[0])
     classA2 = np.random.standard_normal(n) * sigmaA + mA[1]
     classB1 = np.random.standard_normal(n) * sigmaB + mB[0]
     classB2 = np.random.standard_normal(n) * sigmaB + mB[1]
 
     A, B = np.vstack((classA1, classA2)), np.vstack((classB1, classB2))
 
+    red_sample1 = remove_samples_randomly(A, B, n, 25, 25)
+    red_sample2 = remove_samples_randomly(A, B, n, 50, 0)
+    red_sample3 = remove_samples_randomly(A, B, n, 0,  50)
+    red_sample4 = remove_samples_classA(A, n, 20, 80)
+    sample5 = [red_sample4, B]
+    samples = [red_sample1, red_sample2, red_sample3]
     # all errors and weights for different eta
     allErrors = []
     allWeights = []
@@ -41,62 +47,55 @@ def main():
 
 
     # looping over all eta
-    learning_methods = [perceptron_learning, delta_learning_online, delta_learning_batch]
+    #learning_methods = [perceptron_learning, delta_learning_online, delta_learning_batch]
+    learning_methods= [perceptron_learning, delta_learning_batch]
     #classTest = Learning(n, A, B, T, eta)
     #newWeights = [[], [], []]
-    for i in eta:
-        data = perceptron(A, B, n, weights, learning_methods, epochs, i)
-        allErrors.append(data[1])
-        allWeights.append(data[0])
-        #allMSE.append(data[2])
-    print("all errors ", allErrors, "\n")
-    print(allWeights)
+    for j in range(len(samples)):
+        allErrors.append([])
+        allWeights.append([])
+        for i in eta:
+            data = perceptron(samples[j][0], samples[j][1], 75, weights, learning_methods, epochs, i)
+            allErrors[j].append(data[1])
+            allWeights[j].append(data[0])
+            #allMSE.append(data[2])
+    #print("all errors ", allErrors, "\n")
 
-    print("print SHAPE OF ERRORS", np.shape(allErrors), "\n")
-    print("print allErrors before plot: ", allErrors)
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    #print("print SHAPE OF ERRORS", np.shape(allErrors), "\n")
+    #print("print allErrors before plot: ", allErrors)
 
-    #fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-    fig.suptitle('Horizontally stacked subplots')
+    #plot_mapping = ["green", "red", "blue", "--g", "--r", "--b"]
+    plot_mapping = ["green", "blue", "--g", "--b"]
+    #plot_mapping = ["blue", "--b"]
+    x = np.linspace(-10, 10)
+    for k in range(len(samples)):
+        for j in range(len(eta)):
+            fig, (ax1, ax2) = plt.subplots(1, 2)
+            fig.suptitle('Horizontally stacked subplots eta = ' + str(eta[j]))
 
-    # Plot 2
+            # Plot 1
+            plt.subplot(1, 2, 1)
+            plt.title('Visualization of the classification')
+            plt.grid(True)
+            plt.plot(samples[k][0][0], samples[k][0][1], 'x', color="green")
+            plt.plot(samples[k][1][0], samples[k][1][1], 'x', color="red")
+            plt.ylim([-10, 10])
 
-    plt.subplot(1, 2, 2)
-    plt.plot(allErrors[0][0], 'green', allErrors[0][1], 'red', allErrors[0][2], 'blue',)
+            # to plot the initial hyperplane (red)
+            plt.plot(x, -(weights[2] + weights[0] * x) / weights[1], color = 'black', linewidth=1.5)
+            for i in range(len(learning_methods)):
+                # Hyperplane after epochs
+                plt.plot(x, -(allWeights[k][j][i][2] + allWeights[k][j][i][0] * x) / allWeights[k][j][i][1], plot_mapping[2 + i])
 
-    plt.ylabel('errors')
-    plt.xlabel('epochs')
-    """
-    # Plot 3
+            # Plot 2
+            plt.subplot(1, 2, 2)
+            #plt.plot(allErrors[j][0], 'green', allErrors[j][1], 'red', allErrors[j][2], 'blue')
+            plt.plot(allErrors[k][j][0], 'green', allErrors[k][j][1], 'blue',)
+            plt.ylabel('Correct classifications')
+            plt.xlabel('epochs')
+            plt.title('Correct classifications per epoch')
 
-    plt.subplot(1, 3, 3)
-    plt.plot(allMSE[0][0], 'green', allMSE[0][1], 'red')
-
-
-    plt.ylabel('errors')
-    plt.xlabel('epochs')
-    """
-    # Plot 1
-    plt.subplot(1, 2, 1)
-    plt.grid(True)
-
-    plt.plot(classA1, classA2, 'x', color="green")
-    plt.plot(classB1, classB2, 'x', color="red")
-    plt.ylim([-10, 10])
-
-    # to plot the initial hyperplane (red)
-    plt.arrow((weights[2] / np.dot(weights, weights)) * weights[0], (weights[2] / np.dot(weights, weights)) * weights[1],
-              weights[0], weights[1], head_width=0.2, color="red", linewidth=2.0)
-    x = np.linspace(-4, 4)
-    plt.plot(x, -(weights[2] + weights[0] * x) / weights[1], '-r', linewidth=1.5)
-    plot_mapping = ["green", "red", "blue", "--g", "--y", "--b"]
-
-    for i in range(len(learning_methods)):
-        # Hyperplane after epochs
-        x = np.linspace(-4, 4)
-        plt.plot(x, -(allWeights[0][i][2] + allWeights[0][i][0] * x) / allWeights[0][i][1], plot_mapping[3 + i])
-
-    plt.show()
+            plt.show()
 
 
 def perceptron(classPos, classNeg, n, weights, learning_methods, epochs, eta=1):
@@ -114,8 +113,9 @@ def perceptron(classPos, classNeg, n, weights, learning_methods, epochs, eta=1):
     :param batch: choose either batch learning or on-line earning
     :return: weights and errors
     """
-    #
-    classes = np.vstack((np.hstack((classNeg, classPos)), np.array((2 * n) * [1])))
+
+    classes = np.vstack((np.hstack((classNeg, classPos)), np.array(2*n * [1])))
+    #classes = np.hstack((classNeg, classPos))
     allWeights = [weights.copy() for i in range(len(learning_methods))]
     allErrors = [[] for i in range(len(learning_methods))]
     allMSE = [[] for i in range(len(learning_methods))]
@@ -151,6 +151,7 @@ def delta_learning_online(n, X, W, eta, permutation):
 def delta_learning_batch(n, X, W, eta, permutation):
     T = []
     weights_temp = [0, 0, 0]
+    #weights_temp = [0, 0]
     for i in permutation:
         T.append((i // n) * 2 - 1)
         weights_temp += eta * (T[-1] - np.dot(np.transpose(W), X[:, i])) * np.transpose(X[:, i])
@@ -164,7 +165,7 @@ def nErrors(W, n, X):
         projOnW = (np.dot(X[:, (i)], W) / norm ** 2) * W
         if ((np.dot(projOnW, W) > 0 and i < n) or (np.dot(projOnW, W) <= 0 and i > n - 1)):
             error += 1
-    return error
+    return (2*n - error)
 
 def MSE(W, n, X):
     MSEerror=0
@@ -175,17 +176,7 @@ def MSE(W, n, X):
         MSEerror += np.sum(np.sqrt((X[:, (i)]-projOnHyp)**2)) / n
     return MSEerror
 
-    """
-
-    :param n: number of data points in each class
-    :param i: index of a certain Data point
-    :param classes: A list of classes including their coordinates
-    :param weights: weights of the linear line
-    :param bias: A shifting parameter to move it away from origin
-    :return: The target vakue t, the coordinates for the data point x and the estimated target value y
-    """
-
-def remove_samples_randomly(A, B, perc_A, perc_B):
+def remove_samples_randomly(A, B, n, perc_A, perc_B):
     """
     :param A: dataset class A
     :param B: dataset class B
@@ -195,8 +186,8 @@ def remove_samples_randomly(A, B, perc_A, perc_B):
     """
 
     ### for (a): 25,
-    idx_A = np.random.uniform(0, 100, 100-perc_A).astype('int')
-    idx_B = np.random.uniform(0, 100, 100-perc_B).astype('int')
+    idx_A = np.random.uniform(0, n, n - int(n*perc_A/100)).astype('int')
+    idx_B = np.random.uniform(0, n, n - int(n*perc_B/100)).astype('int')
 
     A_red = A[:, idx_A]
     B_red = B[:, idx_B]
@@ -204,23 +195,33 @@ def remove_samples_randomly(A, B, perc_A, perc_B):
     return A_red, B_red
     
 
-def remove_samples_classa(A, n, perc_A_1, perc_A_2):
+def remove_samples_classA(A, n, perc_A_1, perc_A_2):
+    '''
+    :param A: samples of class A
+    :param n: 100
+    :param perc_A_1: percentage to be removed from A<0
+    :param perc_A_2: percentage to be removed from A>0
+    :return: A_red: reduced samples of class A
+    '''
 
     A_1 = A[:, A[1, :] < 0]
     A_2 = A[:, A[1, :] > 0]
 
-
     len_A_1 = np.shape(A_1)[1]
     len_A_2 = np.shape(A_2)[1]
-    n_A_1 = np.round(((n-perc_A_1)/n) * len_A_1)
-    n_A_2 = np.round(((n-perc_A_2)/n) * len_A_2)
+    # n_A_1 = np.round(((n-perc_A_1)/n) * len_A_1)
+    n_A_1 = np.round(((n - n*perc_A_1/100)/n) * len_A_1)
+    # n_A_2 = np.round(((n-perc_A_2)/n) * len_A_2)
+    n_A_2 = np.round(((n - n*perc_A_2/100)/n) * len_A_2)
+
     idx_A_1 = np.random.uniform(0, len_A_1, int(n_A_1)).astype('int')
     idx_A_2 = np.random.uniform(0, len_A_2, int(n_A_2)).astype('int')
 
     A_red1 = A_1[:, idx_A_1]
     A_red2 = A_2[:, idx_A_2]
-    
-    return A_red1, A_red2
+    A_red = np.concatenate((A_red1, A_red2), axis=1)
+
+    return A_red
 
 
 
@@ -248,7 +249,7 @@ def threshold_delta(y):
     return -1
 
 
-def InitialWeightMatrix(dimension, sigmaW, bias):
+def InitialWeightMatrix(sigmaW):
 
     return np.random.standard_normal(3) * sigmaW
 
